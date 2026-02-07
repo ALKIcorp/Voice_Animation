@@ -7,6 +7,7 @@ const stopBtn = document.getElementById('stopBtn');
 const activeModeLabel = document.getElementById('activeModeLabel');
 const prevBtn = document.getElementById('prevMode');
 const nextBtn = document.getElementById('nextMode');
+const liveToggle = document.getElementById('liveToggle');
 
 let isPlaying = false;
 let width;
@@ -42,6 +43,28 @@ let bars = new Array(barCount).fill(0).map(() => ({ h: 4, targetH: 4, v: 0 }));
 const voiceProfileEngine = window.createVoiceProfileEngine
     ? window.createVoiceProfileEngine({ barCount, getHeight: () => height })
     : null;
+const liveSignalToggle = window.createLiveSignalToggle
+    ? window.createLiveSignalToggle({
+        liveToggle,
+        modes,
+        getIsPlaying: () => isPlaying,
+        setIsPlaying: (value) => { isPlaying = value; },
+        getCurrentModeIndex: () => currentModeIndex,
+        setCurrentModeIndex: (value) => { currentModeIndex = value; },
+        updateModeDisplay: () => updateModeDisplay(),
+        getVoiceProfileEngine: () => voiceProfileEngine,
+        setStatusLive: (enabled) => {
+            if (enabled) {
+                statusDot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
+                statusText.innerText = 'Signal Live';
+                statusText.classList.replace('opacity-20', 'opacity-100');
+                statusText.classList.add('text-cyan-400');
+                playBtn.classList.add('opacity-10', 'pointer-events-none');
+                stopBtn.classList.remove('opacity-30');
+            }
+        },
+    })
+    : null;
 
 function init() {
     resize();
@@ -56,15 +79,18 @@ function resize() {
 }
 
 function updateModeDisplay() {
-    activeModeLabel.innerText = modes[currentModeIndex].name;
+    const isLive = liveSignalToggle ? liveSignalToggle.isActive() : false;
+    activeModeLabel.innerText = isLive ? 'Live Recording' : modes[currentModeIndex].name;
 }
 
 nextBtn.onclick = () => {
+    if (liveSignalToggle && liveSignalToggle.isActive()) return;
     currentModeIndex = (currentModeIndex + 1) % modes.length;
     updateModeDisplay();
 };
 
 prevBtn.onclick = () => {
+    if (liveSignalToggle && liveSignalToggle.isActive()) return;
     currentModeIndex = (currentModeIndex - 1 + modes.length) % modes.length;
     updateModeDisplay();
 };
@@ -167,7 +193,7 @@ function updatePhysics() {
     const time = Date.now() * 0.001;
     const mode = modes[currentModeIndex].id;
 
-    if (mode === 'voice_profile' && voiceProfileEngine) {
+    if ((mode === 'voice_profile' || (liveSignalToggle && liveSignalToggle.isActive())) && voiceProfileEngine) {
         const heights = voiceProfileEngine.update(time, isPlaying);
         bars.forEach((bar, i) => {
             bar.targetH = Math.max(4, heights[i] || 4);
