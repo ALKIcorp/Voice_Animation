@@ -14,6 +14,7 @@ let height;
 
 const modes = [
     { id: 'vocal', name: 'Vocal Engine' },
+    { id: 'voice_profile', name: 'Custom Voice Profile' },
     { id: 'stutter', name: 'Stutter Trap' },
     { id: 'ghost', name: 'Ghost Signal' },
     { id: 'overdrive', name: 'Overdrive' },
@@ -38,6 +39,9 @@ const modes = [
 let currentModeIndex = 0;
 const barCount = 80;
 let bars = new Array(barCount).fill(0).map(() => ({ h: 4, targetH: 4, v: 0 }));
+const voiceProfileEngine = window.createVoiceProfileEngine
+    ? window.createVoiceProfileEngine({ barCount, getHeight: () => height })
+    : null;
 
 function init() {
     resize();
@@ -67,6 +71,9 @@ prevBtn.onclick = () => {
 
 playBtn.onclick = () => {
     isPlaying = true;
+    if (voiceProfileEngine) {
+        voiceProfileEngine.start();
+    }
     statusDot.className = 'w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse';
     statusText.innerText = 'Signal Live';
     statusText.classList.replace('opacity-20', 'opacity-100');
@@ -77,6 +84,9 @@ playBtn.onclick = () => {
 
 stopBtn.onclick = () => {
     isPlaying = false;
+    if (voiceProfileEngine) {
+        voiceProfileEngine.stop();
+    }
     statusDot.className = 'w-1.5 h-1.5 rounded-full bg-red-600';
     statusText.innerText = 'Standby';
     statusText.classList.replace('opacity-100', 'opacity-20');
@@ -156,6 +166,20 @@ function getModulation(i, time) {
 function updatePhysics() {
     const time = Date.now() * 0.001;
     const mode = modes[currentModeIndex].id;
+
+    if (mode === 'voice_profile' && voiceProfileEngine) {
+        const heights = voiceProfileEngine.update(time, isPlaying);
+        bars.forEach((bar, i) => {
+            bar.targetH = Math.max(4, heights[i] || 4);
+            const diff = bar.targetH - bar.h;
+            const tension = 0.35;
+            const friction = 0.75;
+            bar.v += diff * tension;
+            bar.v *= friction;
+            bar.h += bar.v;
+        });
+        return;
+    }
 
     bars.forEach((bar, i) => {
         bar.targetH = Math.max(4, getModulation(i, time));
