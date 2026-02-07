@@ -1,0 +1,37 @@
+body {
+    background-color: #050505;
+    color: #ffffff;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+.text-kern {
+    letter-spacing: 0.5em;
+    text-indent: 0.5em;
+}
+
+.nav-btn {
+    transition: all 0.2s ease;
+    opacity: 0.2;
+}
+
+.nav-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.nav-btn:active {
+    transform: scale(0.9);
+}
+
+.control-glass {
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
