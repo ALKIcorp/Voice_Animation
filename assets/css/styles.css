@@ -48,12 +48,19 @@ canvas {
     opacity: 0.4;
     white-space: nowrap;
     color: #ffffff;
+    line-height: 1;
+}
+
+.record-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
 }
 
 /* Recording Button */
 .record-ring {
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     border: 2px solid var(--record-red);
     border-radius: 50%;
     display: flex;
@@ -69,17 +76,25 @@ canvas {
     transform: scale(0.96);
 }
 
+.record-ring:hover {
+    border-color: #a81f22;
+}
+
+.record-ring:hover .record-core {
+    background-color: #a81f22;
+}
+
 .record-core {
-    width: 12px;
-    height: 12px;
+    width: 9px;
+    height: 9px;
     background-color: var(--record-red);
     border-radius: 50%;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .is-recording .record-core {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 2px;
 }
 

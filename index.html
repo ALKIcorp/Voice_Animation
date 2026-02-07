@@ -22,20 +22,21 @@
 
     <!-- Mode Selector Right (Arrows Fixed, Title Pinned) -->
     <div class="absolute top-10 right-10 flex flex-col items-center w-64">
-        <div class="flex items-center gap-3 mb-4">
+        <div class="record-row">
             <button id="liveToggle" class="record-ring" aria-label="Record toggle">
                 <span class="record-core"></span>
             </button>
-            <div id="activeModeLabel" class="record-label">Vocal Engine</div>
-        </div>
-        
-        <div class="flex gap-8 items-center">
-            <button id="prevMode" class="nav-btn">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <button id="nextMode" class="nav-btn">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
+            <div class="flex flex-col items-center gap-2">
+                <div id="activeModeLabel" class="record-label">Vocal Engine</div>
+                <div class="flex gap-8 items-center">
+                    <button id="prevMode" class="nav-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <button id="nextMode" class="nav-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
