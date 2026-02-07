@@ -70,6 +70,7 @@ canvas {
     transition: transform 0.1s ease;
     background: transparent;
     padding: 0;
+    margin-top: -2px;
 }
 
 .record-ring:active {
