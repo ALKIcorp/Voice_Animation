@@ -30,8 +30,7 @@
                 await engine.start();
             }
 
-            liveToggle.classList.add('text-cyan-400');
-            liveToggle.classList.add('ring-1', 'ring-cyan-400/60');
+            liveToggle.classList.add('is-recording');
             updateModeDisplay();
         }
 
@@ -44,8 +43,7 @@
                 engine.stop();
             }
 
-            liveToggle.classList.remove('text-cyan-400');
-            liveToggle.classList.remove('ring-1', 'ring-cyan-400/60');
+            liveToggle.classList.remove('is-recording');
             updateModeDisplay();
         }
 
