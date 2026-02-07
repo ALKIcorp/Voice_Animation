@@ -22,7 +22,12 @@
 
     <!-- Mode Selector Right (Arrows Fixed, Title Pinned) -->
     <div class="absolute top-10 right-10 flex flex-col items-center w-64">
-        <div id="activeModeLabel" class="text-[10px] uppercase text-kern opacity-40 mb-4 whitespace-nowrap text-center">Vocal Engine</div>
+        <div class="flex items-center gap-3 mb-4">
+            <button id="liveToggle" class="control-glass px-3 py-2 rounded-full text-[9px] uppercase tracking-[0.3em] transition-all opacity-70 hover:opacity-100">
+                Rec
+            </button>
+            <div id="activeModeLabel" class="text-[10px] uppercase text-kern opacity-40 whitespace-nowrap text-center">Vocal Engine</div>
+        </div>
         
         <div class="flex gap-8 items-center">
             <button id="prevMode" class="nav-btn">
@@ -30,13 +35,6 @@
             </button>
             <button id="nextMode" class="nav-btn">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-        </div>
-
-        <div class="mt-6 flex items-center gap-3 text-[9px] uppercase tracking-[0.3em] opacity-60">
-            <span>Live Signal</span>
-            <button id="liveToggle" class="control-glass px-4 py-2 rounded-full text-[9px] uppercase tracking-[0.3em] transition-all opacity-70 hover:opacity-100">
-                Off
             </button>
         </div>
     </div>

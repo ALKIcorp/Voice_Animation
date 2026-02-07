@@ -80,7 +80,7 @@ function resize() {
 
 function updateModeDisplay() {
     const isLive = liveSignalToggle ? liveSignalToggle.isActive() : false;
-    activeModeLabel.innerText = isLive ? 'Live Recording' : modes[currentModeIndex].name;
+    activeModeLabel.innerText = isLive ? 'Live Signal' : modes[currentModeIndex].name;
 }
 
 nextBtn.onclick = () => {

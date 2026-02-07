@@ -30,8 +30,8 @@
                 await engine.start();
             }
 
-            liveToggle.innerText = 'On';
             liveToggle.classList.add('text-cyan-400');
+            liveToggle.classList.add('ring-1', 'ring-cyan-400/60');
             updateModeDisplay();
         }
 
@@ -44,8 +44,8 @@
                 engine.stop();
             }
 
-            liveToggle.innerText = 'Off';
             liveToggle.classList.remove('text-cyan-400');
+            liveToggle.classList.remove('ring-1', 'ring-cyan-400/60');
             updateModeDisplay();
         }
 
