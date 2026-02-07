@@ -12,13 +12,39 @@
         return Math.exp(-0.5 * d * d);
     }
 
-    function createWordPattern() {
-        const syllableCount = Math.floor(4 + Math.random() * 6);
+    const wordLibrary = [
+        { text: 'hello', profile: { low: 0.5, mid: 0.7, high: 0.2, pace: 0.95, crisp: 0.3, punch: 0.25 } },
+        { text: 'welcome', profile: { low: 0.6, mid: 0.75, high: 0.25, pace: 0.85, crisp: 0.25, punch: 0.2 } },
+        { text: 'vision', profile: { low: 0.35, mid: 0.65, high: 0.45, pace: 0.9, crisp: 0.45, punch: 0.2 } },
+        { text: 'future', profile: { low: 0.4, mid: 0.7, high: 0.35, pace: 0.95, crisp: 0.4, punch: 0.25 } },
+        { text: 'signal', profile: { low: 0.45, mid: 0.7, high: 0.35, pace: 0.9, crisp: 0.45, punch: 0.35 } },
+        { text: 'flow', profile: { low: 0.75, mid: 0.55, high: 0.15, pace: 0.8, crisp: 0.15, punch: 0.2 } },
+        { text: 'pulse', profile: { low: 0.65, mid: 0.6, high: 0.2, pace: 1.05, crisp: 0.25, punch: 0.5 } },
+        { text: 'motion', profile: { low: 0.5, mid: 0.8, high: 0.25, pace: 0.95, crisp: 0.3, punch: 0.25 } },
+        { text: 'gravity', profile: { low: 0.8, mid: 0.55, high: 0.15, pace: 0.75, crisp: 0.2, punch: 0.35 } },
+        { text: 'ignite', profile: { low: 0.3, mid: 0.65, high: 0.6, pace: 1.05, crisp: 0.6, punch: 0.4 } },
+        { text: 'digital', profile: { low: 0.45, mid: 0.75, high: 0.35, pace: 0.9, crisp: 0.45, punch: 0.25 } },
+        { text: 'kinetic', profile: { low: 0.35, mid: 0.7, high: 0.55, pace: 1.0, crisp: 0.55, punch: 0.3 } },
+        { text: 'ocean', profile: { low: 0.8, mid: 0.55, high: 0.1, pace: 0.7, crisp: 0.1, punch: 0.2 } },
+        { text: 'stream', profile: { low: 0.55, mid: 0.7, high: 0.25, pace: 0.9, crisp: 0.3, punch: 0.2 } },
+        { text: 'ignite', profile: { low: 0.3, mid: 0.65, high: 0.6, pace: 1.1, crisp: 0.65, punch: 0.4 } },
+        { text: 'arc', profile: { low: 0.4, mid: 0.55, high: 0.5, pace: 1.2, crisp: 0.7, punch: 0.5 } },
+        { text: 'shadow', profile: { low: 0.7, mid: 0.6, high: 0.2, pace: 0.85, crisp: 0.2, punch: 0.25 } },
+        { text: 'light', profile: { low: 0.35, mid: 0.65, high: 0.55, pace: 1.0, crisp: 0.55, punch: 0.3 } },
+        { text: 'echo', profile: { low: 0.5, mid: 0.6, high: 0.3, pace: 0.9, crisp: 0.3, punch: 0.2 } },
+        { text: 'spectrum', profile: { low: 0.45, mid: 0.7, high: 0.4, pace: 0.85, crisp: 0.4, punch: 0.25 } },
+    ];
+
+    function createWordPattern(word) {
+        const vowels = word.text.match(/[aeiouy]/gi);
+        const baseSyllables = vowels ? vowels.length : Math.max(1, Math.floor(word.text.length / 3));
+        const syllableCount = clamp(baseSyllables + (Math.random() > 0.7 ? 1 : 0), 1, 6);
         const pattern = [];
         for (let i = 0; i < syllableCount; i += 1) {
-            pattern.push(0.35 + Math.random() * 0.65);
+            const emphasis = 0.35 + Math.random() * 0.65;
+            pattern.push(emphasis);
         }
-        const duration = lerp(0.7, 1.8, Math.random());
+        const duration = lerp(0.7, 1.6, clamp(word.profile.pace, 0.6, 1.3) - 0.6);
         return { pattern, duration };
     }
 
@@ -33,8 +59,13 @@
         let freqData = null;
         let timeData = null;
         let prevFreqData = null;
+        let micEnabled = false;
 
-        let lastWord = createWordPattern();
+        let wordIndex = Math.floor(Math.random() * wordLibrary.length);
+        let lastWord = {
+            meta: wordLibrary[wordIndex],
+            ...createWordPattern(wordLibrary[wordIndex]),
+        };
         let lastWordStart = 0;
         let lastSignalTime = 0;
 
@@ -45,30 +76,37 @@
         };
 
         async function start() {
-            if (audioContext && audioContext.state === 'suspended') {
-                await audioContext.resume();
+            if (audioContext) {
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
                 return;
             }
-            if (audioContext) return;
 
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 return;
             }
 
             try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true,
-                    },
-                });
+                if (!micEnabled) {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true,
+                        },
+                    });
+                    micEnabled = true;
+                }
 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
                 analyser.fftSize = 1024;
                 analyser.smoothingTimeConstant = 0.75;
 
+                if (!stream) {
+                    return;
+                }
                 source = audioContext.createMediaStreamSource(stream);
                 source.connect(analyser);
 
@@ -80,23 +118,14 @@
                 analyser = null;
                 source = null;
                 stream = null;
+                micEnabled = false;
             }
         }
 
         function stop() {
-            if (audioContext && audioContext.state !== 'closed') {
-                audioContext.close();
+            if (audioContext && audioContext.state === 'running') {
+                audioContext.suspend();
             }
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-            audioContext = null;
-            analyser = null;
-            source = null;
-            stream = null;
-            freqData = null;
-            timeData = null;
-            prevFreqData = null;
         }
 
         function getBandEnergy(freqStart, freqEnd, binHz) {
@@ -162,8 +191,12 @@
             const timeSinceSignal = time - lastSignalTime;
             const useSynthetic = !signalActive || timeSinceSignal > 0.4;
 
-            if (useSynthetic && time - lastWordStart > lastWord.duration) {
-                lastWord = createWordPattern();
+            if (time - lastWordStart > lastWord.duration) {
+                wordIndex = (wordIndex + 1) % wordLibrary.length;
+                lastWord = {
+                    meta: wordLibrary[wordIndex],
+                    ...createWordPattern(wordLibrary[wordIndex]),
+                };
                 lastWordStart = time;
             }
 
@@ -179,10 +212,17 @@
                 ? syntheticEnvelope
                 : clamp(rms * 4.5, 0, 1) * lerp(0.6, 1.15, clamp(flux * 3, 0, 1));
 
-            const vowelWeight = clamp((low + mid) * 1.2, 0, 1);
-            const fricativeWeight = clamp(high * 1.6, 0, 1);
-            const plosiveWeight = clamp(flux * 3.5, 0, 1);
-            const nasalWeight = clamp(low * (1 - high) * 1.4, 0, 1);
+            const profile = lastWord.meta.profile;
+            const vowelBias = lerp(0.6, 1.4, profile.low);
+            const midBias = lerp(0.6, 1.4, profile.mid);
+            const highBias = lerp(0.6, 1.4, profile.high);
+            const crispBias = lerp(0.6, 1.6, profile.crisp);
+            const punchBias = lerp(0.6, 1.6, profile.punch);
+
+            const vowelWeight = clamp((low * vowelBias + mid * midBias) * 1.2, 0, 1);
+            const fricativeWeight = clamp(high * 1.6 * highBias * crispBias, 0, 1);
+            const plosiveWeight = clamp(flux * 3.5 * punchBias, 0, 1);
+            const nasalWeight = clamp(low * (1 - high) * 1.4 * vowelBias, 0, 1);
 
             const totalWeight = vowelWeight + fricativeWeight + plosiveWeight + nasalWeight + 0.001;
 
