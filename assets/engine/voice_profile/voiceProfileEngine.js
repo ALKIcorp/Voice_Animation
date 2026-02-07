@@ -48,7 +48,7 @@
         return { pattern, duration };
     }
 
-    function createVoiceProfileEngine(options) {
+        function createVoiceProfileEngine(options) {
         const barCount = options.barCount;
         const getHeight = options.getHeight;
 
@@ -88,7 +88,7 @@
             }
 
             try {
-                if (!micEnabled) {
+                if (!micEnabled || !stream || !stream.active) {
                     stream = await navigator.mediaDevices.getUserMedia({
                         audio: {
                             echoCancellation: true,
@@ -101,8 +101,10 @@
 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 1024;
-                analyser.smoothingTimeConstant = 0.75;
+                analyser.fftSize = 2048;
+                analyser.smoothingTimeConstant = 0.6;
+                analyser.minDecibels = -90;
+                analyser.maxDecibels = -10;
 
                 if (!stream) {
                     return;
@@ -123,9 +125,29 @@
         }
 
         function stop() {
-            if (audioContext && audioContext.state === 'running') {
-                audioContext.suspend();
+            if (audioContext) {
+                if (audioContext.state !== 'closed') {
+                    audioContext.close().catch(() => {});
+                }
+                audioContext = null;
             }
+
+            if (source) {
+                source.disconnect();
+                source = null;
+            }
+
+            analyser = null;
+            freqData = null;
+            timeData = null;
+            prevFreqData = null;
+
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                stream = null;
+            }
+
+            micEnabled = false;
         }
 
         function getBandEnergy(freqStart, freqEnd, binHz) {
@@ -210,7 +232,7 @@
 
             const speechEnvelope = useSynthetic
                 ? syntheticEnvelope
-                : clamp(rms * 4.5, 0, 1) * lerp(0.6, 1.15, clamp(flux * 3, 0, 1));
+                : clamp(rms * 4.8, 0, 1) * lerp(0.7, 1.2, clamp(flux * 3.2, 0, 1));
 
             const profile = lastWord.meta.profile;
             const vowelBias = lerp(0.6, 1.4, profile.low);
@@ -230,22 +252,44 @@
             const midEnergy = (vowelWeight + plosiveWeight * 0.6 + fricativeWeight * 0.5) / totalWeight;
             const highEnergy = (fricativeWeight + plosiveWeight * 0.5) / totalWeight;
 
-            const maxHeight = getHeight() * 0.42;
+            const maxHeight = getHeight() * 0.55;
             const baseHeight = 4;
+
+            const presence = clamp((low + mid + high) * 1.05 + rms * 1.6, 0, 1);
+            const logMin = Math.log10(70);
+            const logMax = Math.log10(9000);
 
             for (let i = 0; i < barCount; i += 1) {
                 const x = i / (barCount - 1);
-                const lowShape = shapes.low(x) * lowEnergy;
-                const midShape = shapes.mid(x) * midEnergy;
-                const highShape = shapes.high(x) * highEnergy;
-                const band = lowShape + midShape + highShape;
-                const spread = band / (lowEnergy + midEnergy + highEnergy + 0.001);
+                let spectrumEnergy = 0;
 
-                const motion = lerp(0.6, 1.25, clamp((low + mid + high) * 1.2, 0, 1));
-                const height = baseHeight + (spread * speechEnvelope * motion * maxHeight);
-                const jitter = (Math.random() - 0.5) * 6 * (speechEnvelope * 0.6);
+                if (!useSynthetic && analyser && freqData) {
+                    const fCenter = Math.pow(10, lerp(logMin, logMax, x));
+                    const bandwidth = fCenter * lerp(0.12, 0.22, x);
+                    const startFreq = Math.max(50, fCenter - bandwidth);
+                    const endFreq = Math.min(10000, fCenter + bandwidth);
+                    const binHz = (audioContext.sampleRate / 2) / analyser.frequencyBinCount;
+                    spectrumEnergy = getBandEnergy(startFreq, endFreq, binHz);
 
-                heights[i] = Math.max(baseHeight, height + jitter);
+                    const tilt = lerp(1.4, 0.85, x);
+                    const harmonicLift = 1 + (flux * 2.4);
+                    spectrumEnergy = clamp(Math.pow(spectrumEnergy, 0.7) * tilt * harmonicLift, 0, 1.2);
+                } else {
+                    const lowShape = shapes.low(x) * lowEnergy;
+                    const midShape = shapes.mid(x) * midEnergy;
+                    const highShape = shapes.high(x) * highEnergy;
+                    const band = lowShape + midShape + highShape;
+                    const spread = band / (lowEnergy + midEnergy + highEnergy + 0.001);
+                    const drift = 0.15 + 0.35 * Math.sin(time * (0.6 + x) + x * 7.5);
+                    spectrumEnergy = clamp(spread * (0.6 + drift), 0, 1);
+                }
+
+                const profileInfluence = lerp(0.7, 1.15, lowEnergy * (1 - x) + highEnergy * x);
+                const motion = lerp(0.55, 1.25, presence);
+                const height = baseHeight + (spectrumEnergy * speechEnvelope * profileInfluence * motion * maxHeight);
+                const micro = (Math.random() - 0.5) * 8 * (speechEnvelope * 0.35 + presence * 0.25);
+
+                heights[i] = Math.max(baseHeight, height + micro);
             }
 
             return heights;
